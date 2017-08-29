@@ -40,17 +40,19 @@ static void printLastError() {
 
 int wmain(int argc, wchar_t *argv[]) {
 	if (argc < 2) {
-		printf("Usage: open [-t] file\n\nOpens a file like from the shell.\n");
+		printf("Usage: open [-t|-e] file\n\nOpens a file like from the shell.\n");
 		exit(0);
 	}
 
-	bool editMode = false;
+	bool editMode = false, textMode = false;
 	wchar_t *file = 0, *verb;
 	wchar_t fileBuffer[1024];
 
 	for (int i = 0; i < argc; i++) {
-		if (!wcscmp(argv[i], L"-t"))
+		if (!wcscmp(argv[i], L"-e"))
 			editMode = true;
+		else if (!wcscmp(argv[i], L"-t"))
+			textMode = true;
 		else
 			file = argv[i];
 	}
@@ -72,14 +74,22 @@ int wmain(int argc, wchar_t *argv[]) {
 			file[i] = 0;
 	}
 
-	if (editMode)
-		verb = L"edit";
-	else
-		verb = L"open";
+	if (textMode) {
+		char command[1024 + 32], path[1024];
+		wcstombs(path, file, 1024);
+		sprintf_s(command, "start notepad \"%s\"", path);
+		system(command);
+	}
+	else {
+		if (editMode)
+			verb = L"edit";
+		else
+			verb = L"open";
 
-	ShellExecute(NULL, verb, file, L"", NULL, SW_SHOW);
-	if (GetLastError() && !editMode)
-		ShellExecute(NULL, L"edit", file, L"", NULL, SW_SHOW);
+		ShellExecute(NULL, verb, file, L"", NULL, SW_SHOW);
+		if (GetLastError() && !editMode)
+			ShellExecute(NULL, L"edit", file, L"", NULL, SW_SHOW);
+	}
 	printLastError();
 	return 0;
 }
